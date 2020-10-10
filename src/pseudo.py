@@ -17,6 +17,15 @@ Brushless Motors
 https://www.youtube.com/watch?v=2et2Q3v6XPg&feature=youtu.be
 """
 
+
+def planwaypoints( waypoint ):
+    """
+    plan a seris of waypoints from the current loaction
+    to the target waypoint.
+    """
+    # uses gps
+    pass
+
 def followwaypoints( waypoints ):
     """
     strategy to follow one or more waypoints    
@@ -33,7 +42,7 @@ def keepstation():
     # uses course to keep the station
     pass
 
-def positionFustion():
+def currentPosition():
     """
     fustion of the gps Position (slow but accurate)
     with accelerometer ( fast but with integral drift )
@@ -41,8 +50,10 @@ def positionFustion():
     # uses gps
     # uses accermeter
     # returns a fast and accurate position
+    pass
 
-def headingFusion():
+
+def currentHeading():
     """
     fusion of the gps Heading(slow but accurate),
     with Magnetometer( faster but inaccurate)
@@ -54,7 +65,7 @@ def headingFusion():
     # return an accurate and fast low drift heading
     pass
 
-def speedFusion():
+def currentSpeed():
     """
     fusion of the gps speed (slow but accrate )
     with Acceleroeter ( very fast but with drift)
@@ -69,14 +80,15 @@ def headingPID( heading ):
     """
     keeps the desired heading in radians
     """
-    # uses headingFusion for actual heading
+    #uses currentHeading
+
     pass
 
 def speedPID( speed ):
     """
     keeps the desired speed -1..0..1
     """
-    # ses speedFusion for actual speed
+    #uses currentSpeed
     pass
 
 
@@ -99,15 +111,26 @@ def course( heading, speed ):
     #uses thrustermixer
     pass
 
-def thrusterMixer( rudder, power )
+def thrusterMixer( rudder, power ):
+    
     """
     controls the left and right thruster speeds
     rudder angle in radians
     power -1 .. 0 .. 1
+    rudder -Pi/2 .. 0 .. Pi/2
     """
-    #uses thrusterLeft
-    #uses thrusterRight
-    pass
+    from math import atan, pi
+
+    # based on the rudder
+    powerleft =  atan( (pi*rudder) / 2 ) + power
+    powerright = atan( (pi*rudder) / 2 ) + power
+
+    # clamp the values between -1..1
+    powerleft  = max(-1, min(1, powerleft))
+    powerright = max(-1, min(1, powerright))
+
+    thrusterLeft( powerleft )
+    thrusterRight( powerright)
 
 def thrusterLeft( power ):
     """
