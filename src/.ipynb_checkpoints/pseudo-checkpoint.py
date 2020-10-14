@@ -15,8 +15,6 @@ Differential Thruster Mixer
 Thruster Driver
 Brushless Motors
 https://www.youtube.com/watch?v=2et2Q3v6XPg&feature=youtu.be
-https://github.com/CRAWlab/RoboBoat-2019/blob/master/Python%20Scripts/Utility%20Scripts/geographic_calculations.py
-
 """
 
 
@@ -104,19 +102,13 @@ def waypoint( lat, long ):
 
 def course( heading, speed ):
     """
-    sets the desired course ans speed
-    heading 0..2PI = North
-    speed 0..1
+    sets the desired course
+    heading in radians
+    speed in meters per second
     """
-
-    #uses currentHeading
-    #uses currentSpeed
     #uses headingPID
     #uses speedPID
     #uses thrustermixer
-    
-    
-
     pass
 
 def thrusterMixer( rudder, power ):
@@ -127,11 +119,11 @@ def thrusterMixer( rudder, power ):
     power -1 .. 0 .. 1
     rudder -Pi/2 .. 0 .. Pi/2
     """
-    from math import pi
+    from math import atan, pi
 
     # based on the rudder
-    powerleft =   rudder *2/pi + power
-    powerright = -rudder *2/pi + power
+    powerleft =  atan( (pi*rudder) / 2 ) + power
+    powerright = atan( (pi*rudder) / 2 ) + power
 
     # clamp the values between -1..1
     powerleft  = max(-1, min(1, powerleft))
@@ -156,65 +148,3 @@ def thrusterRight( power ):
     """
     # usespwmRight
     pass
-
-
-def distance(position1, position2):
-    """
-    calculate distance between two lat/long positions 
-    position1 = lat/long pair in decimal degrees DD.dddddd
-    position2 = lat/long pair in decimal degrees DD.dddddd
-    distance meters
-    """
-
-    from math import sin, cos
-    
-    R = 6373000        # Radius of the earth in m
-    
-    lat1, long1 = deg2rad(position1)
-    lat2, long2 = deg2rad(position2)
-    
-    dLat = lat2 - lat1
-    dLon = long2 - long1
-    
-    x = dLon * cos((lat1+lat2)/2)
-    distance = sqrt(x**2 + dLat**2) * R
-    
-    return distance
-
-def bearing( position1, position2 ):
-    lat1, long1 = deg2rad(position1)
-    lat2, long2 = deg2rad(position2)
-    
-    dLon = long2 - long1
-    
-    y = sin(dLon) * cos(lat2)
-    x = cos(lat1)*  sin(lat2) - sin(lat1) * cos(lat2) * cos(dLon)
-    
-    bearing = (rad2deg(arctan2(y, x)) + 360) % 360
-    
-    return bearing
-
-
-def midpoint( position1, position2 ):
-    """
-
-    returns: midpoint = lat/long pair in decimal degrees DD.dddddd
-    """
-    lat1, long1 = np.deg2rad(position1)
-    lat2, long2 = np.deg2rad(position2)
-    
-    dLat = lat2 - lat1
-    dLon = long2 - long1
-    
-    Bx = np.cos(lat2) * np.cos(dLon)
-    By = np.cos(lat2) * np.sin(dLon)
-    
-    midpoint_lat = np.arctan2(np.sin(lat1) + np.sin(lat2),
-                      np.sqrt( (np.cos(lat1) + Bx) * (np.cos(lat1) +Bx ) + By*By ) )
-    
-    midpoint_long = long1 + np.arctan2(By, np.cos(lat1) + Bx)
-
-    return np.rad2deg([midpoint_lat, midpoint_long])
-
-Check tis
-    https://github.com/sergiuharjau/roboBoat/blob/master/mainSteering.py
