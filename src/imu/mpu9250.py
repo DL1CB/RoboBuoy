@@ -23,7 +23,9 @@ asaz = (((asaz-128)*0.5)/128)+1
 #CNTL1 = 16-bit output, Continuous measurement mode 100Hz
 i2c.writeto_mem(0x0C, 0x0A, b'\x16') 
 
-cx,cy,cz = 0,0,0
+
+def gyro():
+    pass
 
 def mag( calibration=(0,0,0,1,1,1,1,1,1) ):
     
@@ -42,10 +44,10 @@ def mag( calibration=(0,0,0,1,1,1,1,1,1) ):
     x,y,z = x - calibration[0], y - calibration[1], z - calibration[2]
 
     # apply normalisation
-    #x,y,z = x / calibration[3], y / calibration[4], z / calibration[5]
+    x,y,z = x / calibration[3], y / calibration[4], z / calibration[5]
 
     # apply scale
-    x,y,z = x * calibration[6], y * calibration[7], z * calibration[8]
+    #x,y,z = x * calibration[6], y * calibration[7], z * calibration[8]
 
     return x,y,z
 
