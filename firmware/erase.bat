@@ -1,1 +1,2 @@
-esptool.py --port com4 --baud 460800 erase_flash
+call ../env.bat
+esptool.py --port %AMPY_PORT% --baud 460800 erase_flash
