@@ -16,9 +16,13 @@ Thruster Driver
 Brushless Motors
 https://www.youtube.com/watch?v=2et2Q3v6XPg&feature=youtu.be
 https://github.com/CRAWlab/RoboBoat-2019/blob/master/Python%20Scripts/Utility%20Scripts/geographic_calculations.py
+https://github.com/sergiuharjau/roboBoat/blob/master/mainSteering.py
+
+test:$ pytest ./pseudo.py
 
 """
 
+from math import pi, sin, cos, atan2, sqrt, degrees, radians
 
 def planwaypoints( waypoint ):
     """
@@ -78,21 +82,19 @@ def currentSpeed():
     pass
 
 
-def headingPID( heading ):
+def headingPID( currentHeading, desiredBearing ):
     """
     keeps the desired heading in radians
     """
     #uses currentHeading
-
     pass
 
-def speedPID( speed ):
+def speedPID( currentSpeed, desiredSpeed ):
     """
     keeps the desired speed -1..0..1
     """
     #uses currentSpeed
     pass
-
 
 def waypoint( lat, long ):
     """
@@ -102,11 +104,17 @@ def waypoint( lat, long ):
     # uses course
     pass
 
-def course( heading, speed ):
+def course( desiredBearing, desiredSpeed ):
     """
-    sets the desired course ans speed
-    heading 0..2PI = North
-    speed 0..1
+    Maintains a course
+    Inputs:
+        desiredBearing radians
+        desiredSpeed 0..1
+
+    Outputs:
+        rudderAngle radians in range -pi/2 ..0 .. p/2
+        desiredPower float -1 .. 0 .. 1
+
     """
 
     #uses currentHeading
@@ -114,30 +122,28 @@ def course( heading, speed ):
     #uses headingPID
     #uses speedPID
     #uses thrustermixer
-    
-    
-
     pass
 
-def thrusterMixer( rudder, power ):
+def thrusterMixer( rudderAngle, desiredPower ):
     
     """
-    controls the left and right thruster speeds
+    Mixes rudderAngle and desired speed
+    to control the power and direction of the differntial thrusters
+
     rudder angle in radians
     power -1 .. 0 .. 1
-    rudder -Pi/2 .. 0 .. Pi/2
+    rudder -PI .. 0 .. PP
     """
-    from math import pi
-
+    
     # based on the rudder
-    powerleft =   rudder *2/pi + power
-    powerright = -rudder *2/pi + power
+    powerleft =   rudderAngle *2/pi + desiredPower
+    powerright = -rudderAngle *2/pi + desiredPower
 
     # clamp the values between -1..1
     powerleft  = max(-1, min(1, powerleft))
     powerright = max(-1, min(1, powerright))
 
-    thrusterLeft( powerleft )
+    thrusterLeft(  powerleft )
     thrusterRight( powerright)
 
 def thrusterLeft( power ):
@@ -166,12 +172,10 @@ def distance(position1, position2):
     distance meters
     """
 
-    from math import sin, cos
-    
     R = 6373000        # Radius of the earth in m
     
-    lat1, long1 = deg2rad(position1)
-    lat2, long2 = deg2rad(position2)
+    lat1, long1 = radians(position1)
+    lat2, long2 = radians(position2)
     
     dLat = lat2 - lat1
     dLon = long2 - long1
@@ -190,31 +194,15 @@ def bearing( position1, position2 ):
     y = sin(dLon) * cos(lat2)
     x = cos(lat1)*  sin(lat2) - sin(lat1) * cos(lat2) * cos(dLon)
     
-    bearing = (rad2deg(arctan2(y, x)) + 360) % 360
+    bearing = ( degrees( atan2(y, x) ) + 360) % 360
     
     return bearing
 
 
-def midpoint( position1, position2 ):
+
+def deg2rad( position ):
     """
-
-    returns: midpoint = lat/long pair in decimal degrees DD.dddddd
+    converts a degrees position to a radians position
     """
-    lat1, long1 = np.deg2rad(position1)
-    lat2, long2 = np.deg2rad(position2)
-    
-    dLat = lat2 - lat1
-    dLon = long2 - long1
-    
-    Bx = np.cos(lat2) * np.cos(dLon)
-    By = np.cos(lat2) * np.sin(dLon)
-    
-    midpoint_lat = np.arctan2(np.sin(lat1) + np.sin(lat2),
-                      np.sqrt( (np.cos(lat1) + Bx) * (np.cos(lat1) +Bx ) + By*By ) )
-    
-    midpoint_long = long1 + np.arctan2(By, np.cos(lat1) + Bx)
+    return ( radians(position[0]), radians (position[1]) )
 
-    return np.rad2deg([midpoint_lat, midpoint_long])
-
-Check tis
-    https://github.com/sergiuharjau/roboBoat/blob/master/mainSteering.py
