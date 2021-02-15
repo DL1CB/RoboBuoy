@@ -2,8 +2,10 @@
 call ./env.bat
 
 echo uploading imu
-ampy rmdir /imu
-ampy put ./src/imu /imu
+rem ampy rmdir /imu
+rem ampy put ./src/imu /imu
+
+ampy put ./src/imu/mpu9250.py /main.py 
 
 echo starting serial console
 call ./console.bat
