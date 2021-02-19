@@ -22,7 +22,20 @@ test:$ pytest ./pseudo.py
 
 """
 
+import machine
 from math import pi, sin, cos, atan2, sqrt, degrees, radians
+
+# pwm motor outputs
+rightfwd = machine.PWM(machine.Pin(5), freq=1000)   #D1
+rightrev = machine.PWM(machine.Pin(4), freq=1000)   #D2
+leftrev = machine.PWM(machine.Pin(0), freq=1000)    #D3
+leftfwd = machine.PWM(machine.Pin(2), freq=1000)    #D4
+
+# stop motors
+rightfwd.duty(1023)
+rightrev.duty(1023)
+leftfwd.duty(1023)
+leftrev.duty(1023)
 
 def planwaypoints( waypoint ):
     """
@@ -132,36 +145,63 @@ def thrusterMixer( rudderAngle, desiredPower ):
 
     rudder angle in radians
     power -1 .. 0 .. 1
-    rudder -PI .. 0 .. PP
+    rudder -PI .. 0 .. PI
     """
     
     # based on the rudder
-    powerleft =   rudderAngle *2/pi + desiredPower
-    powerright = -rudderAngle *2/pi + desiredPower
 
-    # clamp the values between -1..1
-    powerleft  = max(-1, min(1, powerleft))
-    powerright = max(-1, min(1, powerright))
+    powerleft = 0
+    powerright = 0
 
-    thrusterLeft(  powerleft )
-    thrusterRight( powerright)
 
-def thrusterLeft( power ):
+    powerleft =   2/pi * rudderAngle + desiredPower
+    powerright = -2/pi * rudderAngle+ desiredPower
+
+    powerleft = min(1.0,powerleft)
+    powerleft = max(powerleft,-1.0)
+
+    powerright = min(1.0,powerright)
+    powerright = max(powerright,-1.0)
+
+    return powerleft, powerright
+
+
+def thrusterLeft( power=0 ):
     """
     controls the speed and direction for the left thruster motor
     power -1 .. 0 .. 1
     """
-    # uses pwmLeft
-    pass
+
+    if power > 0:
+        leftrev.duty(1023)
+        leftfwd.duty(1023-round(1023*power))
+      
+    elif power < 0:
+        leftfwd.duty(1023)
+        leftrev.duty(1023+round(1023*power))
+
+    else:
+        leftfwd.duty(1023)
+        leftrev.duty(1023)
 
 
-def thrusterRight( power ):
+def thrusterRight( power=0 ):
     """
     controls the speed and direction for the right thruster motor
     power -1 .. 0 .. 1
     """
-    # usespwmRight
-    pass
+    
+    if power > 0:
+        rightrev.duty(1023)
+        rightfwd.duty(1023-round(1023*power))
+      
+    elif power < 0:
+        rightfwd.duty(1023)
+        rightrev.duty(1023+round(1023*power))
+
+    else:
+        rightfwd.duty(1023)
+        rightrev.duty(1023)
 
 
 def distance(position1, position2):
@@ -206,3 +246,10 @@ def deg2rad( position ):
     """
     return ( radians(position[0]), radians (position[1]) )
 
+
+
+def test( rudderAngle, desiredPower ):
+
+   powerleft, powerright = thrusterMixer( rudderAngle, desiredPower )
+   thrusterLeft( powerleft )
+   thrusterRight( powerright )

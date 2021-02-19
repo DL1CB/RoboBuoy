@@ -109,7 +109,7 @@ def gyroInit(gyroFS = 3, gyroSSF = 3, gyroLPF = 6):
     gyrofullScaleRange(gyroFS)
     gyroLowPassFilter(gyroLPF)
     gyroMean()
-    gyroCalibrate()
+    return gyroCalibrate()
 
 
 def gyro( calibration=(0,0,0) ):
@@ -230,7 +230,7 @@ def mag( calibration=(0,0,0,1,1,1,1,1,1) ):
 
     return x,y,z
 
-def calibrateMag( samples=200, delay=50 ):
+def magCalibrate( samples=200, delay=50 ):
 
     minx = 0
     maxx = 0
@@ -282,8 +282,12 @@ def calibrateMag( samples=200, delay=50 ):
 def heading(x,y,z):
     return degrees(atan2(y,x))
 
-def showMag(c):
+def magShow(c):
     while True:
         print(-1 * heading(*mag(c)))
         utime.sleep_ms(100)
 
+def gyroShow(c):
+    while True:
+        print( gyro(c) )
+        utime.sleep_ms(100)
