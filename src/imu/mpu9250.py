@@ -2,9 +2,8 @@ import utime
 from machine import Pin, I2C
 from struct import pack, unpack
 from math import atan2, degrees
+# Author: Chris Bentley ... incase you forgot you wrote this LOL
 
-#D5 = GPIO 14 = scl 
-#D6 = GPIO 12 = sda
 i2c = I2C(scl=Pin(14), sda=Pin(12), freq=400000)
 
 # Directly access the magnetomoeter via I2C BYPASS mode
@@ -22,15 +21,15 @@ utime.sleep_ms(100) # Settle Time
 # Read factory calibrated sensitivity constants
 asax, asay, asaz = unpack('<bbb',i2c.readfrom_mem(0x0C, 0x10, 3)) 
 
-# Calculate the Magntometer Sesetivity Adjustments
+# Calculate the Magnetometer Sesetivity Adjustments
 asax = (((asax-128)*0.5)/128)+1
 asay = (((asay-128)*0.5)/128)+1
 asaz = (((asaz-128)*0.5)/128)+1
 
-#CNTL1 = 16-bit output, Continuous measurement mode 100Hz
+# Set Register CNTL1 to 16-bit output, Continuous measurement mode 100Hz
 i2c.writeto_mem(0x0C, 0x0A, b'\x16') 
 
-
+# TODO is not accurate :-o
 def temp():
     """
     return the temperature in degrees celcius
@@ -41,19 +40,43 @@ def temp():
 
 
 # Accelerometer 
-# accelFS: full-scale range of ±2g (accelFS = 0), ±4g (accelFS = 1), ±8g (accelFS = 2), and ±16g (accelFS = 3)
+# accelFS:  full-scale range of ±2g (accelFS = 0), ±4g (accelFS = 1), ±8g (accelFS = 2), and ±16g (accelFS = 3)
 # accelSSF: sensitivity scale factor 16.384 (accelSSF = 0), 8.192 (accelSSF = 1), 4.096 (accelSSF = 2), 2.048 (accelSSF = 3) LSB/g
 # accelLPF: 
 
-accelFS = 0
-accelSSF = 0
-accelLPF = None # TBD    
+ 
+
+def accelInit(accelFS = 0):
+    accelfullScaleRange(accelFS)
+
+    
+def accelfullScaleRange( fullScaleRange=None ):
+    """    
+    Sets and reads the Gyro operating range and low pass filter frequencies
+    fullScaleRange:
+        0 is +-2g
+        1 is +-4g
+        2 is +-8g
+        3 is +-16g
+    """
+    if fullScaleRange != None and fullScaleRange in [0,1,2,3]:
+        i2c.writeto_mem(0x68, 0x1C, pack('b',
+         (i2c.readfrom_mem(0x68, 0x1C, 1)[0] & ~24) | fullScaleRange << 3
+        ))
+    return (i2c.readfrom_mem(0x68, 0x1C, 1)[0] & 24) >> 3 
+
 
 def accel():
     """
     return tuple of accelerations (x,y,z)
     """
-    return unpack('>hhh',i2c.readfrom_mem(0x68, 0x3B, 6)) 
+    x,y,z = unpack('>hhh',i2c.readfrom_mem(0x68, 0x3B, 6)) 
+
+    x = x / 16384
+    y = y / 16384
+    z = z / 16384
+
+    return x,y,z
 
 def accelMean(samples=10, delay=10):
     
@@ -104,13 +127,11 @@ def accelCalibrate(samples=256, delay=50):
 # sensitivity scale factor of 131 (gyroSSF = 0), 65.5 (gyroSSF = 1), 32.8 (gyroSSF = 2), 16.4 (gyroSSF = 3 ) LSB/(º/s)
 # low-pass filter 
 
-
-def gyroInit(gyroFS = 3, gyroSSF = 3, gyroLPF = 6):
+def gyroInit(gyroFS = 0, gyroLPF = 6):
     gyrofullScaleRange(gyroFS)
     gyroLowPassFilter(gyroLPF)
-    gyroMean()
-    return gyroCalibrate()
-
+    #gyroMean()
+    #return gyroCalibrate()
 
 def gyro( calibration=(0,0,0) ):
     """
@@ -118,13 +139,16 @@ def gyro( calibration=(0,0,0) ):
     """
     x,y,z = unpack('>hhh',i2c.readfrom_mem(0x68, 0x43, 6)) 
 
+    x = x // 131
+    y = y // 131
+    z = z // 131
+
     # apply calibration
     x,y,z = x - calibration[0], y - calibration[1], z - calibration[2]
 
     return x,y,z
 
 def gyroMean(samples=10, delay=10):
-    
     ox, oy, oz = 0.0, 0.0, 0.0
     n = float(samples)
 
@@ -212,8 +236,12 @@ def mag( calibration=(0,0,0,1,1,1,1,1,1) ):
     
     # two’s complement and Little Endian format. 
     # -32760 ~ 32760 in 16-bit output.
-    x,y,z = unpack('<hhh',i2c.readfrom_mem(0x0C, 0x03, 6))  
+    #x,y,z = unpack('<hhh',i2c.readfrom_mem(0x0C, 0x03, 6))  
+
+    y,x,z = unpack('<hhh',i2c.readfrom_mem(0x0C, 0x03, 6))  
     
+    z = -1 * z
+
     HOFL = i2c.readfrom_mem(0x0C, 0x09, 1)[0] & 0x08
 
     # apply the Factory Magentometer Sensetivity adjustment
@@ -245,6 +273,7 @@ def magCalibrate( samples=200, delay=50 ):
 
         x,y,z = mag()  
 
+     
         minx = min(x,minx)
         maxx = max(x,maxx)
         miny = min(y,miny)
@@ -279,15 +308,24 @@ def magCalibrate( samples=200, delay=50 ):
 
     return cx, cy, cz ,nx, ny, nz, sx, sy, sz
 
-def heading(x,y,z):
+def magToHeading(x,y,z):
+    """
+    converts magentometer x and y cartesian coordinates to a Heading in degrees
+    """
     return degrees(atan2(y,x))
 
-def magShow(c):
+def showHeading(c):
+    """
+    continously shows the magnetic heading in degrees
+    """
     while True:
-        print(-1 * heading(*mag(c)))
+        print( magToHeading(*mag(c)))
         utime.sleep_ms(100)
 
-def gyroShow(c):
+def showGyro(c):
+    """
+    continously shows the Gyro cartesain coordinates
+    """
     while True:
         print( gyro(c) )
         utime.sleep_ms(100)

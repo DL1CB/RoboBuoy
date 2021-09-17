@@ -23,7 +23,14 @@ test:$ pytest ./pseudo.py
 """
 
 import machine
+import mpu9250 as imu
+from fusion import Fusion
 from math import pi, sin, cos, atan2, sqrt, degrees, radians
+
+# init imu
+imu.gyroInit()
+imu.accelInit()
+f = Fusion()
 
 # pwm motor outputs
 rightfwd = machine.PWM(machine.Pin(5), freq=1000)   #D1
@@ -36,6 +43,8 @@ rightfwd.duty(1023)
 rightrev.duty(1023)
 leftfwd.duty(1023)
 leftrev.duty(1023)
+
+
 
 def planwaypoints( waypoint ):
     """
@@ -248,8 +257,31 @@ def deg2rad( position ):
 
 
 
-def test( rudderAngle, desiredPower ):
-
+def test_thrusterMixer( rudderAngle, desiredPower ):
+   """
+    rudder angle in radians
+    power -1 .. 0 .. 1
+    rudder -PI .. 0 .. PI
+   """
    powerleft, powerright = thrusterMixer( rudderAngle, desiredPower )
    thrusterLeft( powerleft )
    thrusterRight( powerright )
+
+
+
+    
+    
+def dofusion():
+    #magbias= (-27.5273, 45.0352, -46.1914, 47.9883, 49.8867, 46.1914, 1.00071, 0.962623, -1.03963)
+    magbias = (45.9844, -21.3047, 43.5039, 57.375, 45.3516, 43.5039, 0.84956, 1.07479, 1.12044)
+
+
+    while True:
+        accel = imu.accel()
+        gyro = imu.gyro()
+        mag = imu.mag(magbias)
+        f.update( accel, gyro, mag )
+        
+        print("w{}wa{}ab{}bc{}c".format(f.q[0],f.q[1],f.q[2],f.q[3]))
+
+dofusion()

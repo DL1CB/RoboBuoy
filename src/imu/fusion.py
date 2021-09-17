@@ -57,7 +57,9 @@ class Fusion(object):
 
     def update_nomag(self, accel, gyro, ts=None):    # 3-tuples (x, y, z) for accel, gyro
         ax, ay, az = accel                  # Units G (but later normalised)
+        #gx, gy, gz = gyro # Units radians/s
         gx, gy, gz = (radians(x) for x in gyro) # Units deg/s
+
         q1, q2, q3, q4 = (self.q[x] for x in range(4))   # short name local variable for readability
         # Auxiliary variables to avoid repeated arithmetic
         _2q1 = 2 * q1
