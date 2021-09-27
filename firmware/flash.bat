@@ -1,2 +1,3 @@
+@echo off
 call ../env.bat
-esptool.py --port %AMPY_PORT% --baud 115200 write_flash -fm dio -fs 4MB 0x0000 .\esp8266-20200911-v1.13.bin
+esptool.py --chip esp32 --port %AMPY_PORT%  write_flash -z 0x1000 ./esp32-20210902-v1.17.bin
